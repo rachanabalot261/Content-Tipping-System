@@ -1,65 +1,91 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.19;
 
-contract TippingSystem {
-    address payable public owner;
-    bool public paused = false;
+/// @title Content Tipping System
+/// @notice Allows users to tip content creators with Ether.
+contract Project {
+    uint256 public totalTips;
+    uint256 private nextTipId = 1;
 
-    mapping(address => bool) public isCreator;
-
-    event CreatorRegistered(address indexed creator);
-    event TipReceived(address indexed tipper, address indexed creator, uint256 amount);
-    event TippingPaused(address indexed admin);
-    event TippingUnpaused(address indexed admin);
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only the owner can call this function.");
-        _;
+    struct Tip {
+        uint256 id;
+        address sender;
+        address receiver;
+        string contentId; // e.g., YouTube video ID, blog post URL, etc.
+        uint256 amount;
+        uint256 timestamp;
+        string message;
     }
 
-    modifier whenNotPaused() {
-        require(!paused, "Tipping is currently paused.");
-        _;
+    mapping(uint256 => Tip) private tips;
+    mapping(address => uint256[]) private tipsReceivedByUser;
+
+    event TipSent(
+        uint256 indexed id,
+        address indexed sender,
+        address indexed receiver,
+        string contentId,
+        uint256 amount,
+        string message
+    );
+
+    /// @notice Send a tip to a content creator.
+    /// @param receiver Address of the content creator.
+    /// @param contentId ID or URL of the content being tipped.
+    /// @param message Optional short message from sender.
+    function sendTip(address payable receiver, string calldata contentId, string calldata message) 
+        external 
+        payable 
+    {
+        require(msg.value > 0, "Tip amount must be greater than zero");
+        require(receiver != address(0), "Invalid receiver address");
+        require(receiver != msg.sender, "You cannot tip yourself");
+
+        uint256 tipId = nextTipId++;
+        totalTips += msg.value;
+
+        tips[tipId] = Tip({
+            id: tipId,
+            sender: msg.sender,
+            receiver: receiver,
+            contentId: contentId,
+            amount: msg.value,
+            timestamp: block.timestamp,
+            message: message
+        });
+
+        tipsReceivedByUser[receiver].push(tipId);
+
+        // Transfer tip
+        receiver.transfer(msg.value);
+
+        emit TipSent(tipId, msg.sender, receiver, contentId, msg.value, message);
     }
 
-    constructor() {
-        owner = payable(msg.sender);
+    /// @notice Get details of a specific tip.
+    function getTip(uint256 id)
+        external
+        view
+        returns (
+            uint256,
+            address,
+            address,
+            string memory,
+            uint256,
+            uint256,
+            string memory
+        )
+    {
+        require(id > 0 && id < nextTipId, "Invalid tip ID");
+        Tip storage t = tips[id];
+        return (t.id, t.sender, t.receiver, t.contentId, t.amount, t.timestamp, t.message);
     }
 
-    function pauseTipping() public onlyOwner {
-        require(!paused, "Tipping is already paused.");
-        paused = true;
-        emit TippingPaused(msg.sender);
-    }
-
-    function unpauseTipping() public onlyOwner {
-        require(paused, "Tipping is not paused.");
-        paused = false;
-        emit TippingUnpaused(msg.sender);
-    }
-
-    function registerAsCreator() public {
-        require(!isCreator[msg.sender], "You are already a registered creator.");
-        isCreator[msg.sender] = true;
-        emit CreatorRegistered(msg.sender);
-    }
-
-    function tipCreator(address payable _creator) public payable whenNotPaused {
-        require(isCreator[_creator], "Recipient is not a registered creator.");
-        require(msg.value > 0, "Tip must be greater than 0 Ether.");
-        require(_creator != msg.sender, "Cannot tip yourself.");
-
-        (bool success, ) = _creator.call{value: msg.value}("");
-        require(success, "Ether transfer failed.");
-
-        emit TipReceived(msg.sender, _creator, msg.value);
-    }
-
-    function ownerWithdrawal() public onlyOwner {
-        uint256 balance = address(this).balance;
-        require(balance > 0, "No Ether balance in contract to withdraw.");
-        (bool success, ) = owner.call{value: balance}("");
-        require(success, "Owner withdrawal failed.");
+    /// @notice Get all tip IDs received by a user.
+    function getTipsReceivedByUser(address user) external view returns (uint256[] memory) {
+        return tipsReceivedByUser[user];
     }
 }
+
+
 
