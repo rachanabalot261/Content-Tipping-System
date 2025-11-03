@@ -25,11 +25,6 @@ To empower creators and artists by offering a decentralized, transparent, and ce
    git clone <repo-link>
    cd content-tipping-system
 
-## 🧾 Deployment Proof
-
-Below is the screenshot showing the deployed contract and faucet transactions on Core Testnet2:
-
-![Contract Deployment Screenshot](C:\Users\racha\OneDrive\Pictures\Screenshots\Screenshot 2025-11-03 220451.png)
 
 
 
