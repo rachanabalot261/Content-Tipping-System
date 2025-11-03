@@ -25,10 +25,12 @@ To empower creators and artists by offering a decentralized, transparent, and ce
    git clone <repo-link>
    cd content-tipping-system
 
-## Deployment Details
-**Network:** Core Blockchain Testnet2  
-**Contract Address:** `0x12831e1e02b372e73e03Ae377532Ee8B679A511d`  
-**Deployed by:** Rachana Balot  
-**Date:** November 3, 2025
+## 🧾 Deployment Proof
+
+Below is the screenshot showing the deployed contract and faucet transactions on Core Testnet2:
+
+![Contract Deployment Screenshot](C:\Users\racha\OneDrive\Pictures\Screenshots\Screenshot 2025-11-03 220451.png)
+
+
 
 
